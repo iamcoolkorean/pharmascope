@@ -35,7 +35,7 @@ def prepare_deal_documents(csv_path: str) -> list[Document]:
 def build_vector_store(documents: list[Document]):
     """문서 임베딩 후 Chroma 벡터 DB 생성 및 저장 (첫 번째 키 사용)"""
     emb = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
+        model="models/gemini-embedding-2",
         google_api_key=key_manager.get_next_key()
     )
     Chroma.from_documents(
