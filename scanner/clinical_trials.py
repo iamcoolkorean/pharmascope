@@ -13,8 +13,8 @@ def search_clinical_trials(
     intervention: Optional[str] = None,
     phase: Optional[str] = None,
     status: str = "RECRUITING,ACTIVE_NOT_RECRUITING,COMPLETED",
-    page_size: int = 100,
-    max_pages: int = 10
+    page_size: int = 10,
+    max_pages: int = 2
 ) -> List[Dict]:
     """임상시험 데이터를 API에서 가져옵니다."""
     query_parts = [condition]
