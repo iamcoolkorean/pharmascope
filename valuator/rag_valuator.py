@@ -55,7 +55,22 @@ def retrieve_similar_deals(
     query_text = f"질환: {query_disease}, 기술: {query_modality}, 단계: {query_phase}"
     retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
     return retriever.invoke(query_text)
-
+def retrieve_similar_deals_with_scores(
+    query_disease: str,
+    query_modality: str,
+    query_phase: str,
+    vectorstore: Chroma,
+    top_k: int = 5
+) -> tuple[list[Document], list[float]]:
+    """질환, 모달리티, 임상 단계로 유사한 과거 딜을 검색하고 유사도 점수도 함께 반환"""
+    query_text = f"질환: {query_disease}, 기술: {query_modality}, 단계: {query_phase}"
+    # Chroma의 similarity_search_with_score 사용
+    results = vectorstore.similarity_search_with_score(query_text, k=top_k)
+    # results는 (Document, score) 튜플의 리스트
+    docs = [r[0] for r in results]
+    scores = [r[1] for r in results]  # score는 거리(낮을수록 유사)
+    return docs, scores
+    
 def predict_deal_structure(
     target_name: str,
     disease: str,
