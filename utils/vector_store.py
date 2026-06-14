@@ -20,8 +20,11 @@ class RotatingEmbeddings(GoogleGenerativeAIEmbeddings):
         return temp_emb.embed_query(text, **kwargs)
 
 def get_embeddings():
-    """순환 임베딩 인스턴스 반환"""
-    return RotatingEmbeddings(model="models/gemini-embedding-2")
+    """순환 임베딩 인스턴스 반환 (초기화 키 필요)"""
+    return RotatingEmbeddings(
+        model="models/gemini-embedding-2",
+        google_api_key=key_manager.get_next_key()   # 초기화용 키
+    )
 
 def load_existing_store():
     """저장된 Chroma DB를 로드 (순환 임베딩 사용)"""
