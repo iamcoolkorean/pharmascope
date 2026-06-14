@@ -1,6 +1,7 @@
 """
 PharmaScope – AI 라이선스 인 타겟 발굴 에이전트
-- 검색 자동 완화, 유사도 점수 표시, Plotly 차트
+- 검색 자동 완화, 유사도 점수, Plotly 차트
+- 빈 결과 처리 버그 수정
 """
 import streamlit as st
 import pandas as pd
@@ -65,25 +66,30 @@ if search_btn:
         cur_phase_api = None if phase == "모든 단계" else phase.replace(" ", "").upper()
         found = False
 
+        # 시도 1: 사용자 입력 그대로
         raw = search_clinical_trials(disease, cur_modality, cur_phase_api)
         df_all = extract_relevant_fields(raw)
-        if cur_phase_api:
+
+        # Phase 필터: df_all이 비어 있지 않을 때만 적용
+        if not df_all.empty and cur_phase_api:
             df_all = df_all[df_all["임상단계"].str.contains(phase, na=False)]
 
         if not df_all.empty:
             found = True
             st.success(f"✅ 원하신 조건으로 {len(df_all)} 건의 후보를 찾았습니다.")
         else:
+            # 시도 2: 모달리티 제거
             if modality:
                 st.warning("📭 원하신 조건에 맞는 시험이 없습니다. 모달리티를 제거하고 재검색합니다...")
                 cur_modality = None
                 raw = search_clinical_trials(disease, cur_modality, cur_phase_api)
                 df_all = extract_relevant_fields(raw)
-                if cur_phase_api:
+                if not df_all.empty and cur_phase_api:
                     df_all = df_all[df_all["임상단계"].str.contains(phase, na=False)]
                 if not df_all.empty:
                     found = True
                     st.success(f"✅ 모달리티 없이 {len(df_all)} 건의 후보를 찾았습니다.")
+            # 시도 3: 단계도 완화
             if not found and phase != "모든 단계":
                 st.warning("📭 여전히 결과가 없습니다. 임상 단계를 모든 단계로 확장합니다...")
                 cur_phase_api = None
@@ -101,7 +107,7 @@ if search_btn:
     # ── Deal Valuator + 유사도 점수 ──
     st.subheader("💰 유사 과거 딜 분석 & 예상 계약 조건")
     predictions = []
-    similarity_scores = []  # 각 타겟의 최고 유사도 점수 저장 (평균 또는 max)
+    similarity_scores = []
 
     for _, row in df_all.iterrows():
         disease_str = row["질환"][:50]
@@ -118,9 +124,7 @@ if search_btn:
             disease_str, mod_str, phase_str,
             st.session_state.vector_store
         )
-        # 유사도 점수를 0~100%로 변환 (거리가 작을수록 유사도 높음, Chroma는 L2 거리 사용)
         if scores:
-            # 거리 정규화: 1 / (1 + distance) * 100
             best_score = max([1/(1+s) for s in scores]) * 100
             similarity_scores.append(round(best_score, 1))
         else:
@@ -141,10 +145,9 @@ if search_btn:
 
     # ── Plotly 차트: 예상 계약금 비교 ──
     st.subheader("📊 예상 계약금 비교")
-    # 숫자로 변환 가능한 행만 추출
     chart_df = display_df[display_df["예상 계약금($M)"] != "?"].copy()
-    chart_df["예상 계약금($M)"] = pd.to_numeric(chart_df["예상 계약금($M)"])
     if not chart_df.empty:
+        chart_df["예상 계약금($M)"] = pd.to_numeric(chart_df["예상 계약금($M)"])
         fig = px.bar(
             chart_df,
             x="NCT_ID",
