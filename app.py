@@ -121,6 +121,8 @@ if search_btn:
             phase_str = row["임상단계"]
             target_name = row["NCT_ID"] + " / " + row["스폰서"]
 
+            st.write(f"⏳ 처리 중: {target_name}") 
+
             # 점수 포함 검색 시도
             try:
                 similar_docs, scores = retrieve_similar_deals_with_scores(
