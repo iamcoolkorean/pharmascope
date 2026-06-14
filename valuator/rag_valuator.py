@@ -33,7 +33,7 @@ def prepare_deal_documents(csv_path: str) -> list[Document]:
     return docs
 
 def build_vector_store(documents: list[Document]):
-    """문서 임베딩 후 Chroma 벡터 DB 생성 및 저장 (첫 번째 키 사용)"""
+    """문서 임베딩 후 Chroma 벡터 DB 생성 및 저장"""
     emb = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-2",
         google_api_key=key_manager.get_next_key()
@@ -55,6 +55,7 @@ def retrieve_similar_deals(
     query_text = f"질환: {query_disease}, 기술: {query_modality}, 단계: {query_phase}"
     retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
     return retriever.invoke(query_text)
+
 def retrieve_similar_deals_with_scores(
     query_disease: str,
     query_modality: str,
@@ -64,13 +65,11 @@ def retrieve_similar_deals_with_scores(
 ) -> tuple[list[Document], list[float]]:
     """질환, 모달리티, 임상 단계로 유사한 과거 딜을 검색하고 유사도 점수도 함께 반환"""
     query_text = f"질환: {query_disease}, 기술: {query_modality}, 단계: {query_phase}"
-    # Chroma의 similarity_search_with_score 사용
     results = vectorstore.similarity_search_with_score(query_text, k=top_k)
-    # results는 (Document, score) 튜플의 리스트
     docs = [r[0] for r in results]
-    scores = [r[1] for r in results]  # score는 거리(낮을수록 유사)
+    scores = [r[1] for r in results]  # distance (낮을수록 유사)
     return docs, scores
-    
+
 def predict_deal_structure(
     target_name: str,
     disease: str,
