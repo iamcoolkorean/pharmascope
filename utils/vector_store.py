@@ -9,7 +9,6 @@ class RotatingEmbeddings(GoogleGenerativeAIEmbeddings):
         temp_emb = GoogleGenerativeAIEmbeddings(
             model="models/text-embedding-004",
             google_api_key=key_manager.get_next_key()
-)
         )
         return temp_emb.embed_documents(texts, **kwargs)
 
@@ -17,13 +16,12 @@ class RotatingEmbeddings(GoogleGenerativeAIEmbeddings):
         temp_emb = GoogleGenerativeAIEmbeddings(
             model="models/text-embedding-004",
             google_api_key=key_manager.get_next_key()
-)
         )
         return temp_emb.embed_query(text, **kwargs)
 
 def get_embeddings():
     """순환 임베딩 인스턴스 반환"""
-    return RotatingEmbeddings(model="models/embedding-001")
+    return RotatingEmbeddings(model="models/text-embedding-004")
 
 def load_existing_store():
     """저장된 Chroma DB를 로드 (순환 임베딩 사용)"""
