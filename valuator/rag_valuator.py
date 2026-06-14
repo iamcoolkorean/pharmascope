@@ -3,6 +3,7 @@
 RAG로 유사한 딜을 검색하여 예상 계약 조건을 생성합니다.
 """
 import pandas as pd
+import json
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
@@ -36,7 +37,6 @@ def build_vector_store(documents: list[Document]):
     emb = GoogleGenerativeAIEmbeddings(
         model="models/text-embedding-004",
         google_api_key=key_manager.get_next_key()
-)
     )
     Chroma.from_documents(
         documents=documents,
@@ -99,7 +99,6 @@ JSON만 출력하세요.
         "phase": phase,
         "context": context
     })
-    import json
     try:
         content = result.content.strip()
         if "```json" in content:
