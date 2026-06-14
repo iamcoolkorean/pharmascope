@@ -1,11 +1,11 @@
 """
 PharmaScope – AI 라이선스 인 타겟 발굴 에이전트
-- 검색 결과 0건 시 조건 자동 완화 (모달리티 제거 → 단계 확장 → 둘 다 제거)
-- Streamlit Cloud 배포 지원 (벡터 DB 자동 구축)
+- 검색 자동 완화, 유사도 점수 표시, Plotly 차트
 """
 import streamlit as st
 import pandas as pd
 import os
+import plotly.express as px
 from dotenv import load_dotenv
 
 from scanner.clinical_trials import search_clinical_trials, extract_relevant_fields
@@ -14,7 +14,7 @@ from valuator.rag_valuator import (
     load_vector_store,
     prepare_deal_documents,
     build_vector_store,
-    retrieve_similar_deals,
+    retrieve_similar_deals_with_scores,
     predict_deal_structure
 )
 from reporter.report_generator import generate_bd_report
@@ -61,16 +61,12 @@ if search_btn:
 
     # ── 검색 및 자동 완화 ──
     with st.spinner("임상시험 DB 검색 중..."):
-        # 초기 조건
         cur_modality = modality
         cur_phase_api = None if phase == "모든 단계" else phase.replace(" ", "").upper()
         found = False
 
-        # 시도 1: 사용자 입력 그대로
         raw = search_clinical_trials(disease, cur_modality, cur_phase_api)
         df_all = extract_relevant_fields(raw)
-
-        # Phase 필터 (API 필터가 불완전할 수 있으므로)
         if cur_phase_api:
             df_all = df_all[df_all["임상단계"].str.contains(phase, na=False)]
 
@@ -78,7 +74,6 @@ if search_btn:
             found = True
             st.success(f"✅ 원하신 조건으로 {len(df_all)} 건의 후보를 찾았습니다.")
         else:
-            # 시도 2: 모달리티만 제거
             if modality:
                 st.warning("📭 원하신 조건에 맞는 시험이 없습니다. 모달리티를 제거하고 재검색합니다...")
                 cur_modality = None
@@ -89,7 +84,6 @@ if search_btn:
                 if not df_all.empty:
                     found = True
                     st.success(f"✅ 모달리티 없이 {len(df_all)} 건의 후보를 찾았습니다.")
-            # 시도 3: 단계도 완화 (모든 단계)
             if not found and phase != "모든 단계":
                 st.warning("📭 여전히 결과가 없습니다. 임상 단계를 모든 단계로 확장합니다...")
                 cur_phase_api = None
@@ -98,20 +92,19 @@ if search_btn:
                 if not df_all.empty:
                     found = True
                     st.success(f"✅ 모든 임상 단계에서 {len(df_all)} 건의 후보를 찾았습니다.")
-            # 시도 4: 모달리티도 다시 추가? (이미 없으므로) -> 모든 단계+모달리티 없음 상태
             if not found:
                 st.error("🛑 모든 조건을 완화했지만 결과가 없습니다. 질환명을 확인하거나 다른 검색어를 시도해보세요.")
                 st.stop()
 
-        # 최종 결과 정리 (상위 10개)
         df_all = df_all.head(10)
 
-    # ── Deal Valuator ──
+    # ── Deal Valuator + 유사도 점수 ──
     st.subheader("💰 유사 과거 딜 분석 & 예상 계약 조건")
     predictions = []
+    similarity_scores = []  # 각 타겟의 최고 유사도 점수 저장 (평균 또는 max)
+
     for _, row in df_all.iterrows():
         disease_str = row["질환"][:50]
-        # 모달리티 처리
         if modality:
             mod_str = modality
         else:
@@ -120,21 +113,51 @@ if search_btn:
         phase_str = row["임상단계"]
         target_name = row["NCT_ID"] + " / " + row["스폰서"]
 
-        similar = retrieve_similar_deals(
+        # 점수 포함 검색
+        similar_docs, scores = retrieve_similar_deals_with_scores(
             disease_str, mod_str, phase_str,
             st.session_state.vector_store
         )
+        # 유사도 점수를 0~100%로 변환 (거리가 작을수록 유사도 높음, Chroma는 L2 거리 사용)
+        if scores:
+            # 거리 정규화: 1 / (1 + distance) * 100
+            best_score = max([1/(1+s) for s in scores]) * 100
+            similarity_scores.append(round(best_score, 1))
+        else:
+            similarity_scores.append(0.0)
+
         deal_pred = predict_deal_structure(
             target_name, disease_str, mod_str, phase_str,
-            similar, st.session_state.gemini
+            similar_docs, st.session_state.gemini
         )
         predictions.append(deal_pred)
 
     display_df = df_all.copy()
+    display_df["유사도 점수"] = similarity_scores
     display_df["예상 계약금($M)"] = [p.get("upfront_million","?") for p in predictions]
     display_df["예상 마일스톤($M)"] = [p.get("milestone_total_million","?") for p in predictions]
     display_df["예상 로열티(%)"] = [p.get("royalty_rate_percent","?") for p in predictions]
     st.dataframe(display_df, use_container_width=True)
+
+    # ── Plotly 차트: 예상 계약금 비교 ──
+    st.subheader("📊 예상 계약금 비교")
+    # 숫자로 변환 가능한 행만 추출
+    chart_df = display_df[display_df["예상 계약금($M)"] != "?"].copy()
+    chart_df["예상 계약금($M)"] = pd.to_numeric(chart_df["예상 계약금($M)"])
+    if not chart_df.empty:
+        fig = px.bar(
+            chart_df,
+            x="NCT_ID",
+            y="예상 계약금($M)",
+            color="예상 계약금($M)",
+            color_continuous_scale="Blues",
+            title="타겟별 예상 계약금 (Upfront)",
+            labels={"NCT_ID": "임상시험 ID", "예상 계약금($M)": "계약금 (백만 달러)"}
+        )
+        fig.update_layout(coloraxis_showscale=False)
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("예상 계약금 정보가 없어 차트를 그릴 수 없습니다.")
 
     # ── 인사이트 리포트 ──
     st.subheader("📑 BD 인사이트 리포트 (상위 3개 타겟)")
