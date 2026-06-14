@@ -1,11 +1,12 @@
 """
 PharmaScope – AI 라이선스 인 타겟 발굴 에이전트
-- 검색 자동 완화, 유사도 점수, Plotly 차트
-- 자가 진단 try-except 적용
+- 검색 자동 완화, 유사도 점수, Plotly 차트 (막대 + 파이)
+- 자가 진단 및 진행 상황 표시
 """
 import streamlit as st
 import pandas as pd
 import os
+import time
 import plotly.express as px
 from dotenv import load_dotenv
 
@@ -70,7 +71,6 @@ if search_btn:
         raw = search_clinical_trials(disease, cur_modality, cur_phase_api)
         df_all = extract_relevant_fields(raw)
 
-        # Phase 필터: df_all이 비어 있지 않을 때만 적용
         if not df_all.empty and cur_phase_api:
             df_all = df_all[df_all["임상단계"].str.contains(phase, na=False)]
 
@@ -78,7 +78,6 @@ if search_btn:
             found = True
             st.success(f"✅ 원하신 조건으로 {len(df_all)} 건의 후보를 찾았습니다.")
         else:
-            # 시도 2: 모달리티 제거
             if modality:
                 st.warning("📭 원하신 조건에 맞는 시험이 없습니다. 모달리티를 제거하고 재검색합니다...")
                 cur_modality = None
@@ -89,7 +88,6 @@ if search_btn:
                 if not df_all.empty:
                     found = True
                     st.success(f"✅ 모달리티 없이 {len(df_all)} 건의 후보를 찾았습니다.")
-            # 시도 3: 단계도 완화
             if not found and phase != "모든 단계":
                 st.warning("📭 여전히 결과가 없습니다. 임상 단계를 모든 단계로 확장합니다...")
                 cur_phase_api = None
@@ -103,8 +101,9 @@ if search_btn:
                 st.stop()
 
         df_all = df_all.head(10)
+        st.write(f"🆕 처리할 후보 수: {len(df_all)}")
 
-    # ── Deal Valuator + 유사도 점수 (자가 진단) ──
+    # ── Deal Valuator + 유사도 점수 ──
     st.subheader("💰 유사 과거 딜 분석 & 예상 계약 조건")
 
     predictions = []
@@ -121,14 +120,15 @@ if search_btn:
             phase_str = row["임상단계"]
             target_name = row["NCT_ID"] + " / " + row["스폰서"]
 
-            st.write(f"⏳ 처리 중: {target_name}") 
+            st.write(f"⏳ 처리 중: {target_name}")
 
-            # 점수 포함 검색 시도
+            # 점수 포함 검색
             try:
                 similar_docs, scores = retrieve_similar_deals_with_scores(
                     disease_str, mod_str, phase_str,
                     st.session_state.vector_store
                 )
+                st.write(f"   유사 딜 {len(similar_docs)}건 발견")
                 if scores:
                     best_score = max([1/(1+s) for s in scores]) * 100
                     similarity_scores.append(round(best_score, 1))
@@ -139,12 +139,15 @@ if search_btn:
                 similarity_scores.append(0.0)
                 similar_docs = []
 
-            # 예측 시도
+            # 예측
             try:
+                start_time = time.time()
                 deal_pred = predict_deal_structure(
                     target_name, disease_str, mod_str, phase_str,
                     similar_docs, st.session_state.gemini
                 )
+                elapsed = time.time() - start_time
+                st.write(f"   예측 완료 ({elapsed:.1f}초): ${deal_pred.get('upfront_million','?')}M")
             except Exception as e:
                 st.error(f"딜 예측 오류 ({target_name}): {str(e)}")
                 deal_pred = {"upfront_million": None, "milestone_total_million": None, "royalty_rate_percent": None, "rationale": str(e)}
@@ -163,7 +166,7 @@ if search_btn:
     display_df["예상 로열티(%)"] = [p.get("royalty_rate_percent","?") for p in predictions]
     st.dataframe(display_df, use_container_width=True)
 
-    # ── Plotly 차트: 예상 계약금 비교 ──
+    # ── Plotly: 예상 계약금 막대 차트 (3-1) ──
     try:
         st.subheader("📊 예상 계약금 비교")
         chart_df = display_df[display_df["예상 계약금($M)"] != "?"].copy()
@@ -184,6 +187,27 @@ if search_btn:
             st.info("예상 계약금 정보가 없어 차트를 그릴 수 없습니다.")
     except Exception as e:
         st.error(f"차트 생성 오류: {str(e)}")
+
+    # ── Plotly: 임상 단계 분포 파이 차트 (3-2) ──
+    try:
+        st.subheader("🥧 임상 단계별 분포")
+        if not df_all.empty and "임상단계" in df_all.columns:
+            phase_list = df_all["임상단계"].str.split(",").explode().str.strip()
+            phase_counts = phase_list.value_counts()
+            if not phase_counts.empty:
+                fig_pie = px.pie(
+                    values=phase_counts.values,
+                    names=phase_counts.index,
+                    title="검색된 임상시험의 단계 분포",
+                    color_discrete_sequence=px.colors.sequential.Blues_r
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.info("임상 단계 정보가 없습니다.")
+        else:
+            st.info("임상 단계 정보가 없습니다.")
+    except Exception as e:
+        st.error(f"파이 차트 생성 오류: {str(e)}")
 
     # ── 인사이트 리포트 ──
     st.subheader("📑 BD 인사이트 리포트 (상위 3개 타겟)")
