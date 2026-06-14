@@ -7,3 +7,4 @@ langchain-chroma
 chromadb
 python-dotenv
 google-generativeai
+plotly
