@@ -1,0 +1,31 @@
+deal_id,deal_date,licensor,licensee,technology,disease_area,phase_at_deal,upfront_million,milestone_total_million,royalty_rate_percent,description
+D1,2020-01-15,Alnylam,Novartis,siRNA,NASH,Phase 2,150,1200,12.5,siRNA 기반 NASH 치료제. Phase 2 단계.
+D2,2020-03-20,Arrowhead,Janssen,siRNA,Hepatitis B,Phase 2,175,1600,10.0,siRNA 기반 B형 간염 치료제.
+D3,2020-05-12,Dicerna,Roche,siRNA,Primary Hyperoxaluria,Phase 3,200,1800,14.0,siRNA 기반 PH 치료제.
+D4,2020-07-01,Ionis,AstraZeneca,Antisense,Cardiovascular,Phase 2,120,1000,9.5,Antisense 올리고 기반 심혈관계 약물.
+D5,2020-09-10,Moderna,Merck,mRNA,Cancer Vaccine,Phase 2,250,2200,15.0,mRNA 기반 맞춤형 암 백신.
+D6,2020-11-05,BioNTech,Pfizer,mRNA,Infectious Disease,Phase 2,300,3000,12.0,mRNA 기반 감염병 백신.
+D7,2021-01-20,Seagen,Takeda,ADC,ADC 항암,Phase 3,400,3200,16.0,ADC 기반 고형암 치료제.
+D8,2021-03-15,Immunomedics,Gilead,ADC,TNBC,Phase 3,350,2800,14.5,ADC 기반 삼중음성유방암 치료제.
+D9,2021-05-10,MacroGenics,Sanofi,ADC,ADC 항암,Phase 2,150,1500,11.0,ADC 기반 혈액암 치료제.
+D10,2021-07-25,Transition Therapeutics,Eli Lilly,경구용 GLP-1,Obesity,Phase 2,100,800,8.0,경구용 GLP-1 유사체 비만 치료제.
+D11,2021-09-08,Carmot Therapeutics,Novo Nordisk,경구용 GLP-1,Diabetes,Phase 1,80,700,7.5,경구용 GLP-1 당뇨병 치료제.
+D12,2021-11-11,Juno Therapeutics,Celgene,CAR-T,Blood Cancer,Phase 2,500,4000,18.0,CAR-T 세포 치료제.
+D13,2022-01-05,Kite Pharma,Gilead,CAR-T,Lymphoma,Phase 3,450,3500,17.0,CAR-T 림프종 치료제.
+D14,2022-02-20,Allogene,Servier,CAR-T,Blood Cancer,Phase 1,120,1500,15.0,동종 CAR-T 치료제.
+D15,2022-04-12,Argenx,Janssen,항체,Myasthenia Gravis,Phase 3,300,2500,14.0,FcRn 항체 기반 자가면역질환 치료제.
+D16,2022-06-01,Prothena,Roche,항체,Alzheimer,Phase 2,250,2200,13.5,항체 기반 알츠하이머 치료제.
+D17,2022-07-15,AnaptysBio,GSK,항체,Dermatology,Phase 2,100,900,10.0,항체 기반 피부질환 치료제.
+D18,2022-08-30,Protagonist Therapeutics,Janssen,펩타이드,IBD,Phase 2,150,1200,12.0,펩타이드 기반 염증성 장질환 치료제.
+D19,2022-10-10,Zealand Pharma,Boehringer Ingelheim,펩타이드,Obesity,Phase 3,350,2800,15.0,펩타이드 기반 비만 치료제.
+D20,2023-01-20,Sage Therapeutics,Biogen,GABA modulator,Depression,Phase 3,250,2000,13.0,GABA-A 조절제 기반 우울증 치료제.
+D21,2023-03-01,Karuna Therapeutics,Bristol-Myers Squibb,Muscarinic agonist,Schizophrenia,Phase 3,500,4500,19.0,무스카린 작용제 기반 조현병 치료제.
+D22,2023-05-10,Akero Therapeutics,Novo Nordisk,FGF21 analog,NASH,Phase 2,180,1400,11.5,FGF21 유사체 기반 NASH 치료제.
+D23,2023-06-15,Madrigal Pharmaceuticals,Roche,THR-beta agonist,NASH,Phase 3,300,2500,14.0,THR-beta 작용제 기반 NASH 치료제.
+D24,2023-07-20,Mineralys Therapeutics,AstraZeneca,aldosterone synthase inhibitor,Hypertension,Phase 2,100,800,9.0,알도스테론 합성효소 저해제.
+D25,2023-08-25,Revolution Medicines,Sanofi,KRAS inhibitor,Lung Cancer,Phase 2,250,2200,13.0,KRAS 변이 폐암 표적 치료제.
+D26,2023-10-01,Biohaven,Pfizer,glutamate modulator,Neurodegeneration,Phase 3,200,1800,12.5,글루타메이트 조절제 기반 신경퇴행성 질환 치료제.
+D27,2023-11-10,Viking Therapeutics,Eli Lilly,GLP-1/GIP dual agonist,Obesity,Phase 2,280,2400,14.0,GLP-1/GIP 이중 작용제 비만 치료제.
+D28,2024-01-05,Arrowhead,GSK,siRNA,Liver Disease,Phase 2,160,1300,10.5,siRNA 기반 간 질환 치료제.
+D29,2024-02-15,Ionis,Novartis,Antisense,Neurology,Phase 3,220,1900,12.0,Antisense 올리고 기반 신경계 질환 치료제.
+D30,2024-03-20,Dicerna,Roche,siRNA,Renal Disease,Phase 2,140,1100,9.8,siRNA 기반 신장 질환 치료제.
