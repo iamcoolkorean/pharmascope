@@ -1,4 +1,6 @@
-streamlit>=1.28.0
+fastapi
+uvicorn[standard]
+pydantic
 pandas
 requests
 langchain
@@ -7,4 +9,4 @@ langchain-chroma
 chromadb
 python-dotenv
 google-generativeai
-plotly
+yfinance>=0.2.0
